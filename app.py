@@ -214,7 +214,8 @@ if 'customer' in filtered_df.columns:
         filtered_df = filtered_df[filtered_df['customer'].isin(selected_customers)]
 
 # Main content with tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Overview", "Heatmaps", "Geographic Analysis", "Driver Performance", "Data Explorer"])
+tab1, tab2, tab3, tab4, tab5, tab6  = st.tabs(["Overview", "Heatmaps", "Geographic Analysis", "Driver Performance", "Data Explorer",
+                                               "Pincode Analysis"])
 
 with tab1:
     st.markdown("<h2 class='sub-header'>Delivery Network Overview</h2>", unsafe_allow_html=True)
@@ -506,6 +507,117 @@ with tab5:
             height=500
         )
         st.plotly_chart(fig, use_container_width=True)
+    
+with tab6:
+    st.markdown("<h2 class='sub-header'>Pincode Analysis</h2>", unsafe_allow_html=True)
+
+    if 'postcode' in filtered_df.columns:
+        # Pincode distribution
+        st.markdown("<h3>Delivery Distribution by Pincode</h3>", unsafe_allow_html=True)
+
+        # Count deliveries by pincode
+        pincode_counts = filtered_df['postcode'].value_counts().reset_index()
+        pincode_counts.columns = ['pincode', 'count']
+
+        # Top 20 pincodes by delivery count
+        top_pincodes = pincode_counts.head(20)
+
+        fig = px.bar(top_pincodes, x='pincode', y='count',
+                    title='Top Pincodes by Number of Deliveries',
+                    color='count',
+                    color_continuous_scale='Viridis',
+                    labels={'count': 'Number of Deliveries', 'pincode': 'Pincode'})
+
+        fig.update_layout(
+            height=500,
+            xaxis={'categoryorder':'total descending'}
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Delivery metrics by pincode
+        st.markdown("<h3>Delivery Metrics by Pincode</h3>", unsafe_allow_html=True)
+
+        # Calculate metrics if kms and weight columns exist
+        metrics_cols = ['postcode']
+        metrics_aggs = {'count': 'size'}
+
+        if 'kms' in filtered_df.columns:
+            metrics_cols.append('kms')
+            metrics_aggs['avg_distance'] = ('kms', 'mean')
+
+        if 'weight' in filtered_df.columns:
+            metrics_cols.append('weight')
+            metrics_aggs['avg_weight'] = ('weight', 'mean')
+
+        # Create metrics dataframe
+        pincode_metrics = filtered_df[metrics_cols].groupby('postcode').agg(**metrics_aggs).reset_index()
+        pincode_metrics = pincode_metrics.sort_values('count', ascending=False)
+
+        # Format the dataframe with rounded values
+        for col in pincode_metrics.columns:
+            if col != 'postcode' and col != 'count':
+                pincode_metrics[col] = pincode_metrics[col].round(2)
+
+        # Show the table
+        st.dataframe(pincode_metrics)
+
+        # Hub-Pincode heatmap
+        if 'hub' in filtered_df.columns:
+            st.markdown("<h3>Hub-Pincode Delivery Heatmap</h3>", unsafe_allow_html=True)
+
+            # Get top 15 pincodes for better visualization
+            top_15_pincodes = pincode_counts.head(15)['pincode'].tolist()
+            hub_pincode_df = filtered_df[filtered_df['postcode'].isin(top_15_pincodes)]
+
+            hub_pincode_counts = pd.crosstab(hub_pincode_df['hub'], hub_pincode_df['postcode'])
+
+            fig = px.imshow(hub_pincode_counts,
+                          labels=dict(x="Pincode", y="Hub", color="Deliveries"),
+                          x=hub_pincode_counts.columns,
+                          y=hub_pincode_counts.index,
+                          color_continuous_scale='Purples')
+
+            fig.update_layout(
+                height=600,
+                xaxis={'tickangle': 45}
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        # Customer-Pincode analysis
+        if 'customer' in filtered_df.columns:
+            st.markdown("<h3>Customer Presence by Pincode</h3>", unsafe_allow_html=True)
+
+            # Get top 10 customers
+            top_customers = filtered_df['customer'].value_counts().head(10).index.tolist()
+
+            # Filter for top customers
+            top_customer_df = filtered_df[filtered_df['customer'].isin(top_customers)]
+
+            # Get unique pincodes per customer
+            customer_pincode_data = []
+            for customer in top_customers:
+                customer_data = top_customer_df[top_customer_df['customer'] == customer]
+                pincodes_count = customer_data['postcode'].nunique()
+                customer_pincode_data.append({
+                    'customer': customer,
+                    'unique_pincodes': pincodes_count
+                })
+
+            customer_pincodes_df = pd.DataFrame(customer_pincode_data)
+
+            fig = px.bar(customer_pincodes_df, x='customer', y='unique_pincodes',
+                        title='Number of Unique Pincodes Served by Top Customers',
+                        color='unique_pincodes',
+                        color_continuous_scale='Teal',
+                        labels={'unique_pincodes': 'Number of Unique Pincodes', 'customer': 'Customer'})
+
+            fig.update_layout(
+                height=500,
+                xaxis={'categoryorder':'total descending', 'tickangle': 45}
+            )
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Pincode information not available in the dataset.")
 
 # Footer
 st.markdown("---")
