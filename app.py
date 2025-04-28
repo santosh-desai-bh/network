@@ -8,14 +8,18 @@ from analytics import (
     create_first_mile_metrics, create_first_mile_charts, create_first_mile_analysis,
     create_last_mile_metrics, create_last_mile_charts, create_last_mile_analysis
 )
+from driver_cost import (
+    load_driver_cost_data, create_driver_cost_filters, create_driver_cost_overview,
+    create_cost_breakdown_analysis, create_daily_trends_analysis, create_detailed_driver_table
+)
 from utils import set_page_config
 
 def main():
     # Set page configuration
     set_page_config()
     
-    # Add tabs for First Mile and Last Mile analysis
-    tab1, tab2 = st.tabs(["First Mile Analysis", "Last Mile Analysis"])
+    # Add tabs for First Mile, Last Mile, and Driver Cost analysis
+    tab1, tab2, tab3 = st.tabs(["First Mile Analysis", "Last Mile Analysis", "Driver Cost Analysis"])
     
     with tab1:
         # First Mile Analysis
@@ -142,6 +146,64 @@ def main():
             3. Download the results as CSV
             4. Upload the CSV file using the uploader above
             """)
+    
+    with tab3:
+        # Driver Cost Analysis
+        st.title("Driver Cost Analysis Dashboard")
+        
+        # Add custom help text with the download link
+        st.markdown("""
+        ### Download the data
+        Please download the CSV data from: 
+        [Driver Cost Analysis Query](https://analytics.blowhorn.com/question/3113-if-costs-by-driver?start=2025-04-01&end=2025-04-28)
+        
+        After downloading, upload the CSV file below:
+        """)
+        
+        # File uploader for the CSV data
+        driver_cost_file = st.file_uploader("Upload driver cost data CSV", type=["csv"], key="driver_cost_uploader")
+        
+        if driver_cost_file is not None:
+            try:
+                # Load the driver cost data
+                df = load_driver_cost_data(driver_cost_file)
+                
+                # Check if the necessary columns exist
+                required_columns = ['driver', 'model_name', 'total_cost']
+                if all(col in df.columns for col in required_columns):
+                    # Create filters in the sidebar
+                    filtered_df = create_driver_cost_filters(df)
+                    
+                    # If data exists after filtering, create visualizations
+                    if not filtered_df.empty:
+                        # Create cost overview
+                        create_driver_cost_overview(filtered_df)
+                        
+                        # Create cost breakdown analysis
+                        create_cost_breakdown_analysis(filtered_df)
+                        
+                        # Create daily trends analysis
+                        create_daily_trends_analysis(filtered_df)
+                        
+                        # Create detailed driver table
+                        create_detailed_driver_table(filtered_df)
+                else:
+                    missing_cols = [col for col in required_columns if col not in df.columns]
+                    st.error(f"CSV is missing required columns: {', '.join(missing_cols)}")
+                    st.info("Required columns: driver, model_name, total_cost")
+            except Exception as e:
+                st.error(f"Error processing driver cost data: {str(e)}")
+                st.info("Please check that the uploaded file is in the correct format.")
+        else:
+            st.info("""
+            Please follow these steps:
+            
+            1. Go to [Driver Cost Analysis Query](https://analytics.blowhorn.com/question/3113-if-costs-by-driver?start=2025-04-01&end=2025-04-28)
+            2. Adjust the date range parameters as needed
+            3. Download the results as CSV
+            4. Upload the CSV file using the uploader above
+            """)
 
 if __name__ == "__main__":
     main()
+

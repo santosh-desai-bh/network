@@ -54,3 +54,55 @@ def format_date_range(start_date, end_date):
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
     
     return f"{start_date.strftime('%b %d, %Y')} to {end_date.strftime('%b %d, %Y')}"
+
+def format_currency(value):
+    """
+    Format a number as Indian currency (with commas)
+    
+    Args:
+        value: Numeric value to format
+        
+    Returns:
+        str: Formatted currency string
+    """
+    if pd.isna(value):
+        return "N/A"
+    
+    try:
+        # Format with Indian number system (lakhs, crores)
+        if value >= 10000000:  # Crore
+            return f"₹{value/10000000:.2f} Cr"
+        elif value >= 100000:  # Lakh
+            return f"₹{value/100000:.2f} L"
+        else:
+            # For smaller values, use comma formatting
+            return f"₹{value:,.2f}"
+    except:
+        return str(value)
+
+import pandas as pd
+def clean_numeric_string(s):
+    """
+    Clean a string containing a number (with commas, currency symbols etc.)
+    and convert to float
+    
+    Args:
+        s: String to clean
+        
+    Returns:
+        float: Numeric value
+    """
+    if pd.isna(s) or s == '':
+        return np.nan
+    
+    try:
+        # If it's already a number, return it
+        if isinstance(s, (int, float)):
+            return float(s)
+        
+        # Remove currency symbols, commas, and other non-numeric characters
+        # Keep decimal points and minus signs
+        clean_str = ''.join(c for c in str(s) if c.isdigit() or c in ['.', '-'])
+        return float(clean_str)
+    except:
+        return np.nan
