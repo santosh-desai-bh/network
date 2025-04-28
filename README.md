@@ -1,173 +1,80 @@
-# Last Mile Delivery Analysis Streamlit App - Setup Guide
+# Blowhorn Network Analysis Dashboard
 
-This guide walks you through setting up and running the Last Mile Delivery Analysis Streamlit application on your local machine.
+This application provides comprehensive visualization and analysis tools for Blowhorn's network operations, covering both first mile pickups and last mile deliveries.
 
-## Prerequisites
+## Features
 
-- Python 3.7 or higher
-- Pip package manager
-- Your last mile delivery data in CSV format
+### First Mile Analysis
+- Interactive map visualization with heatmap of pickup locations
+- Filtering by microwarehouse, customer, and hub
+- Statistical analysis of pickup distances and order counts
+- Relationship analysis between hubs and microwarehouses
 
-## Step 1: Create a Project Directory
+### Last Mile Analysis
+- Interactive map visualization with heatmap of delivery locations
+- Filtering by hub, pincode, vehicle type, and customer
+- Statistical analysis of delivery distances and service areas
+- Pincode-based coverage analysis
 
-Create a new directory for your project and navigate into it:
+## File Structure
 
-```bash
-mkdir last-mile-analysis
-cd last-mile-analysis
-```
+- **app.py**: Main application entry point with tabbed interface
+- **data_loader.py**: Functions for loading and preprocessing both types of data
+- **data_filters.py**: UI components for filtering data in both analyses
+- **map_visualization.py**: Map rendering for both first mile and last mile
+- **analytics.py**: Statistical analysis and chart generation for both analyses
+- **utils.py**: Utility functions shared across the application
+- **requirements.txt**: Dependencies list
 
-## Step 2: Set Up a Virtual Environment (Recommended)
+## Setup and Usage
 
-You can use either `venv` (built into Python) or `virtualenv` to create an isolated environment. Choose one of the following methods:
+1. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-### Option 1: Using venv (Python built-in)
+2. Run the application:
+   ```
+   streamlit run app.py
+   ```
 
-#### On Windows:
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
+3. In the browser:
+   - Choose between First Mile or Last Mile analysis tabs
+   - Download CSV data from the analytics platform for the appropriate analysis
+   - Upload the CSV file to the application
+   - Use the filters in the sidebar to analyze specific data segments
 
-#### On macOS/Linux:
-```bash
-python -m venv venv
-source venv/bin/activate
-```
+## Data Requirements
 
-### Option 2: Using virtualenv
-
-First, install virtualenv if you don't have it already:
-```bash
-pip install virtualenv
-```
-
-Then create and activate a virtual environment:
-
-#### On Windows:
-```bash
-virtualenv venv
-venv\Scripts\activate
-```
-
-#### On macOS/Linux:
-```bash
-virtualenv venv
-source venv/bin/activate
-```
-
-## Step 3: Install Required Packages
-
-Create a file named `requirements.txt` with the following content:
-
-```
-streamlit==1.32.0
-pandas==2.1.0
-numpy==1.26.0
-matplotlib==3.8.0
-seaborn==0.13.0
-scikit-learn==1.4.0
-folium==0.15.0
-streamlit-folium==0.15.0
-plotly==5.18.0
-haversine==2.8.0
-```
-
-Then install the requirements:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Step 4: Create the Application File
-
-Create a file named `app.py` and copy the provided Streamlit application code into it.
-
-## Step 5: Prepare Your Data
-
-Ensure your CSV file has the following columns:
-- `number`: Delivery ID
-- `created_date`: Date and time of delivery
-- `driver`: Driver name
-- `registration_certificate_number`: Vehicle registration
-- `vehicle_model`: Type of vehicle
-- `hub`: Delivery hub name
+### First Mile Data
+The application expects a CSV file with the following columns:
+- `trip_id`: Unique identifier for the pickup trip
 - `customer`: Customer name
-- `postcode`: Delivery postcode
-- `hub_long`: Hub longitude
-- `hub_lat`: Hub latitude
+- `hub`: Hub identifier
+- `customerlong`: Customer location longitude
+- `customerlat`: Customer location latitude
+- `pickedup_at`: Timestamp of pickup
+- `microwarehouse`: Microwarehouse name
+- `microwarehouselong`: Microwarehouse location longitude
+- `microwarehouselat`: Microwarehouse location latitude
+- `kms`: Distance in kilometers
+- `num_orders`: Number of orders in the pickup
+
+Additional columns like `start_time`, `end_time`, and `pickup_cutoff_limit` will be used if available.
+
+### Last Mile Data
+The application expects a CSV file with the following columns:
+- `number`: Order number
+- `created_date`: Order creation date
+- `driver`: Driver name
+- `vehicle_model`: Vehicle type
+- `hub`: Hub identifier
+- `customer`: Customer name
+- `postcode`: Delivery pincode
+- `hub_long`: Hub location longitude
+- `hub_lat`: Hub location latitude
 - `delivered_long`: Delivery location longitude
 - `delivered_lat`: Delivery location latitude
-- `weight`: Package weight
-- `kms`: Distance in kilometers
+- `kms`: Delivery distance in kilometers
 
-Place your CSV file in the project directory or be ready to upload it through the app.
-
-## Step 6: Run the Application
-
-Start the Streamlit application:
-
-```bash
-streamlit run app.py
-```
-
-This will launch the app and open it in your default web browser. If it doesn't open automatically, you can access it at http://localhost:8501.
-
-## Step 7: Upload Your Data
-
-Once the app is running:
-1. Use the file uploader in the sidebar to upload your CSV file
-2. Alternatively, select "Use demo data" to explore the app with sample data
-
-## Step 8: Explore the Dashboard
-
-Navigate through the different sections using the sidebar:
-- 📊 **Overview**: General statistics and distributions
-- 🗺️ **Route Map**: Interactive maps of delivery routes
-- 🔍 **Clustering Analysis**: Grouping of delivery locations
-- 📈 **Delivery Insights**: Patterns by time, hub, and driver
-- 📋 **Data Explorer**: Filter and analyze raw data
-- 💡 **Optimization Suggestions**: Data-driven recommendations
-
-## Troubleshooting
-
-### Common Issues:
-
-1. **Missing Dependencies**:
-   ```bash
-   pip install streamlit pandas numpy matplotlib seaborn scikit-learn folium streamlit-folium plotly haversine
-   ```
-
-2. **Map Rendering Issues**:
-   - Ensure you have a stable internet connection
-   - Try a different browser if maps don't render properly
-
-3. **Performance Issues with Large Datasets**:
-   - Consider filtering your data to a smaller subset for faster analysis
-   - Increase your system's memory allocation to Python if possible
-
-4. **CSV Format Issues**:
-   - Ensure your CSV is properly formatted with the expected column names
-   - Check for missing values in critical columns (coordinates, dates)
-
-## Deployment Options
-
-To share the app with your team:
-
-1. **Local Network Deployment**:
-   ```bash
-   streamlit run app.py --server.port 8501 --server.address 0.0.0.0
-   ```
-   Then others on your network can access it at http://YOUR_IP:8501
-
-2. **Cloud Deployment**:
-   - Consider deploying to Streamlit Cloud, Heroku, or AWS for wider access
-   - Follow platform-specific deployment instructions
-
-## Next Steps
-
-- Customize the app code to match your specific business requirements
-- Add additional analysis capabilities as needed
-- Set up automated data pipelines for regular updates
-
-For more information on customizing Streamlit apps, visit the [Streamlit documentation](https://docs.streamlit.io/).
+Additional fields will be used if available.
