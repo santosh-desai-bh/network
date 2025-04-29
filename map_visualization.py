@@ -126,6 +126,38 @@ def create_first_mile_map(df):
     deck = pdk.Deck(
         layers=layers,
         initial_view_state=view_state,
+        map_style='light',  # Use default light style instead of mapbox URL
+        tooltip=cluster_tooltip
+    )
+    tooltip = {
+        "html": "<b>Trip ID:</b> {trip_id}<br />"
+               "<b>Customer:</b> {customer}<br />"
+               "<b>Hub:</b> {hub}<br />"
+               "<b>Microwarehouse:</b> {microwarehouse}<br />"
+               "<b>Picked up at:</b> {pickedup_at}<br />"
+               "<b>Distance:</b> {kms} km<br />"
+               "<b>Orders:</b> {num_orders}",
+        "style": {
+            "backgroundColor": "steelblue",
+            "color": "white"
+        }
+    }
+    
+    # Different tooltip for clusters
+    cluster_tooltip = {
+        "html": "<b>Point Count:</b> {pointCount}"
+    } if use_clusters else tooltip
+    
+    # Combine layers
+    map_title = "First Mile Pickup Heatmap with " + ("Clustered Markers" if use_clusters else "Individual Markers")
+    st.markdown(f"### {map_title}")
+    
+    # For clustered view, adjust layer ordering
+    layers = [heatmap_layer, pickup_layer, microwarehouse_layer]
+        
+    deck = pdk.Deck(
+        layers=layers,
+        initial_view_state=view_state,
         map_style='mapbox://styles/mapbox/light-v10',
         tooltip=cluster_tooltip
     )

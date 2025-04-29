@@ -21,8 +21,42 @@ def create_first_mile_filters(df):
         st.markdown("## Data Summary")
         st.write(f"Total Pickups: {len(filtered_df)}")
         
+        # Date filter if pickup date exists
         if 'pickedup_at' in filtered_df.columns:
-            st.write(f"Date Range: {filtered_df['pickedup_at'].min().date()} to {filtered_df['pickedup_at'].max().date()}")
+            try:
+                # Convert to datetime if it's not already
+                if not pd.api.types.is_datetime64_any_dtype(filtered_df['pickedup_at']):
+                    filtered_df['pickedup_at'] = pd.to_datetime(filtered_df['pickedup_at'])
+                
+                # Get min and max dates
+                min_date = filtered_df['pickedup_at'].min().date()
+                max_date = filtered_df['pickedup_at'].max().date()
+                
+                st.write(f"Date Range: {min_date} to {max_date}")
+                
+                # Add date filter
+                selected_date = st.date_input(
+                    "Filter by Date",
+                    value=min_date,
+                    min_value=min_date,
+                    max_value=max_date,
+                    key="first_mile_date"
+                )
+                
+                # Convert selected date to datetime for filtering
+                selected_date_start = pd.Timestamp(selected_date)
+                selected_date_end = pd.Timestamp(selected_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+                
+                # Filter dataframe by date
+                filtered_df = filtered_df[
+                    (filtered_df['pickedup_at'] >= selected_date_start) &
+                    (filtered_df['pickedup_at'] <= selected_date_end)
+                ]
+                
+                st.write(f"Showing pickups for: {selected_date}")
+                st.write(f"Pickups on this date: {len(filtered_df)}")
+            except Exception as e:
+                st.error(f"Error processing date filter: {str(e)}")
         
         # Filter by microwarehouse
         if 'microwarehouse' in filtered_df.columns:
@@ -88,12 +122,31 @@ def create_first_mile_filters(df):
                     except:
                         pass
         
-        # Map settings
+        # Map visualization settings
         st.markdown("## Map Settings")
-        use_clusters = st.toggle("Use Marker Clusters", value=False, key="first_mile_clusters")
         
-        # Store the cluster preference as a session state
+        # Add option to show arc flow lines
+        show_flow_lines = st.checkbox("Show Flow Lines", value=True, key="first_mile_show_flow_lines")
+        st.session_state['show_flow_lines'] = show_flow_lines
+        
+        # Arc height
+        if show_flow_lines:
+            arc_height = st.slider("Arc Height", min_value=0.1, max_value=2.0, value=1.0, step=0.1, key="first_mile_arc_height")
+            st.session_state['arc_height'] = arc_height
+        
+        # Standard marker clustering option
+        use_clusters = st.toggle("Use Marker Clusters", value=False, key="first_mile_clusters")
         st.session_state['first_mile_use_clusters'] = use_clusters
+        
+        # Add debug information
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### Debugging Info")
+        st.sidebar.info(f"Showing {len(filtered_df)} records")
+        
+        # Show a few rows of the filtered data to help debugging
+        with st.sidebar.expander("View Sample Data", expanded=False):
+            if not filtered_df.empty:
+                st.dataframe(filtered_df[['customer', 'hub', 'microwarehouse', 'customerlong', 'customerlat', 'microwarehouselong', 'microwarehouselat']].head(3))
     
     return filtered_df
 
